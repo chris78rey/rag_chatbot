@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>RAF Chatbot - RAG Assistant</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=2">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <h1>🤖 RAF Chatbot</h1>
+                    <p class="subtitle">Retrieval-Augmented Generation Assistant</p>
+                </div>
+                <div class="status-section">
+                    <div class="status-indicator" id="statusIndicator">
+                        <span class="status-dot" id="statusDot"></span>
+                        <span class="status-text" id="statusText">Checking...</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Chat Area -->
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message system-message">
+                        <p>👋 Welcome to RAF Chatbot! Ask me anything and I'll search through documents to find the best answer.</p>
+                    </div></p>
+                </div>
+
+                <!-- Input Area -->
+                <div class="chat-input-area">
+                    <form id="queryForm" class="query-form">
+                        <div class="input-wrapper">
+                            <input 
+                                type="text" 
+                                id="queryInput" 
+                                class="query-input" 
+                                placeholder="Ask a question..." 
+                                autocomplete="off"
+                                required
+                            >
+                            <button type="submit" class="send-button" id="sendButton">
+                                <span class="send-icon">➤</span>
+                            </button>
+                        </div>
+                        <div class="input-help">
+                            Press Enter or click the button to send your question
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <!-- Metrics Section -->
+                <section class="metrics-section">
+                    <h2 class="section-title">📊 System Metrics</h2>
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Requests</div>
+                            <div class="metric-value" id="metricRequests">0</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Errors</div>
+                            <div class="metric-value metric-errors" id="metricErrors">0</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Cache Hits</div>
+                            <div class="metric-value" id="metricCacheHits">0</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Rate Limited</div>
+                            <div class="metric-value" id="metricRateLimited">0</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Avg Latency</div>
+                            <div class="metric-value" id="metricAvgLatency">0ms</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">P95 Latency</div>
+                            <div class="metric-value" id="metricP95Latency">0ms</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Info Section -->
+                <section class="info-section">
+                    <h2 class="section-title">ℹ️ About</h2>
+                    <div class="info-content">
+                        <p><strong>RAG Technology:</strong> Combines document retrieval with AI to provide accurate, sourced answers.</p>
+                        <p><strong>Vector Database:</strong> Qdrant for semantic search.</p>
+                        <p><strong>Version:</strong> 1.0.0</p>
+                    </div>
+                </section>
+
+                <!-- Quick Actions -->
+                <section class="actions-section">
+                    <h2 class="section-title">⚙️ Actions</h2>
+                    <button class="action-button" id="refreshMetricsBtn">Refresh Metrics</button>
+                    <button class="action-button" id="clearChatBtn">Clear Chat</button>
+                </section>
+            </aside>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>RAF Chatbot © 2026 | Powered by RAG & AI</p>
+        </footer>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <p>Processing your query...</p>
+    </div>
+
+    <script src="/static/js/app.js?v=2"></script>
+</body>
+</html>

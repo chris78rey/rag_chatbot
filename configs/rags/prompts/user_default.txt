@@ -1,0 +1,11 @@
+Contexto disponible:
+{context}
+
+---
+
+Pregunta del usuario:
+{question}
+
+---
+
+Responde basándote únicamente en el contexto proporcionado arriba.

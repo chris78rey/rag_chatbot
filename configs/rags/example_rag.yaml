@@ -1,0 +1,125 @@
+# ============================================================================
+# RAF CHATBOT — RAG CONFIGURATION EXAMPLE
+# ============================================================================
+#
+# This file defines settings for ONE specific RAG (Retrieval-Augmented Generation).
+# Each RAG corresponds to one collection in Qdrant.
+#
+# DO NOT modify this .example file. Instead:
+# 1. Copy this file to <rag_id>.yaml (e.g., policies_rag.yaml)
+# 2. Adjust values for your specific RAG use case
+# 3. Place in configs/rags/ directory
+#
+# ============================================================================
+
+# RAG IDENTIFICATION
+rag_id: "example_rag"                 # Unique identifier (alphanumeric + underscore)
+display_name: "Example RAG"           # Human-readable name
+description: "Example RAG for documentation and policies"
+
+# QDRANT COLLECTION SETTINGS
+collection:
+  name: "example_rag_docs"            # Collection name in Qdrant
+  recreation_policy: "skip"           # skip, recreate, or append
+  shard_number: 1                     # Number of shards (1 for small, >1 for large)
+
+# EMBEDDINGS CONFIGURATION
+embeddings:
+  model_name: "sentence-transformers/all-MiniLM-L6-v2"  # Hugging Face model ID
+  dimension: 384                      # Vector dimension (depends on model)
+  batch_size: 32                      # Batch size for embedding generation
+  normalize: true                     # L2 normalize embeddings
+
+# DOCUMENT CHUNKING STRATEGY
+chunking:
+  splitter: "recursive_character"     # recursive_character or semantic
+  chunk_size: 512                     # Characters per chunk
+  chunk_overlap: 128                  # Overlap between chunks
+  separator: "\n\n"                   # Primary separator
+  secondary_separators:               # Fallback separators
+    - "\n"
+    - " "
+    - ""
+
+# RETRIEVAL SETTINGS
+retrieval:
+  top_k: 5                            # Number of documents to retrieve
+  score_threshold: 0.5                # Minimum similarity score (0.0-1.0)
+  max_context_chunks: 10              # Maximum chunks to include in context
+  rerank: false                       # Enable semantic reranking (expensive)
+  filter_duplicates: true             # Remove duplicate chunks
+
+# PROMPTING & LLM INTERACTION
+prompting:
+  system_template_path: "/app/configs/templates/system_prompt.txt"
+  user_template_path: "/app/configs/templates/user_prompt.txt"
+  max_tokens: 1024                    # Max tokens in LLM response
+  temperature: 0.7                    # Randomness (0.0-1.0)
+  top_p: 0.95                         # Nucleus sampling parameter
+  frequency_penalty: 0.0              # Penalty for repeated tokens
+  presence_penalty: 0.0               # Penalty for token presence
+
+# RATE LIMITING (Per RAG)
+rate_limit:
+  requests_per_second: 10             # Max requests per second for this RAG
+  burst_size: 20                      # Max burst requests
+  per_user: false                     # Apply limits per user (if auth enabled)
+
+# ERROR MESSAGES
+errors:
+  no_context_message: "No relevant information found for your query."
+  provider_error_message: "The LLM service is temporarily unavailable."
+  timeout_message: "Request timed out. Please try again."
+  rate_limit_message: "Too many requests. Please try again later."
+
+# CACHING (Per RAG)
+cache:
+  enabled: true                       # Cache responses for this RAG
+  ttl_seconds: 3600                   # Cache TTL (1 hour)
+  key_prefix: "example_rag"           # Cache key prefix
+
+# SESSION MANAGEMENT (Per RAG)
+sessions:
+  enabled: true                       # Enable conversation history
+  history_turns: 5                    # Number of previous turns to remember
+  ttl_seconds: 3600                   # Session TTL (1 hour)
+  deduplicate_history: true           # Remove duplicate messages
+
+# SOURCE CONFIGURATION
+sources:
+  directory: "example_rag_sources"    # Subdirectory in paths.sources_root
+  allowed_extensions:                 # File types to ingest
+    - ".pdf"
+    - ".txt"
+    - ".md"
+    - ".docx"
+  max_file_size_mb: 50                # Maximum file size
+  auto_reload: true                   # Auto-reload when files change
+
+# METADATA & INDEXING
+metadata:
+  extract_title: true                 # Extract document title
+  extract_date: true                  # Extract modification date
+  custom_fields: []                   # Additional metadata fields
+
+# SECURITY (Per RAG)
+security:
+  public: true                        # Is this RAG accessible without auth?
+  allowed_users: []                   # List of allowed user IDs (empty = all)
+  require_consent: false              # Require data usage consent
+
+# MONITORING & LOGGING (Per RAG)
+monitoring:
+  log_queries: true                   # Log user queries
+  log_responses: false                # Log LLM responses (be careful with PII)
+  collect_metrics: true               # Collect performance metrics
+  alert_on_error: true                # Alert when errors occur
+
+# EXPERIMENTAL FEATURES
+experimental:
+  enable_reranking: false             # Use semantic reranking
+  enable_hyde: false                  # Hypothetical Document Embeddings
+  enable_query_expansion: false       # Expand queries for better retrieval
+```
+
+Now let me create the documentation file:

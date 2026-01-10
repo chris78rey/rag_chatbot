@@ -1,0 +1,5 @@
+# Placeholder para mantener la carpeta en git
+# Los archivos de fuentes se colocan aquí organizados por RAG:
+# data/sources/<rag_id>/incoming/
+# data/sources/<rag_id>/processed/
+# data/sources/<rag_id>/failed/

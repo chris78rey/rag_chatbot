@@ -1,0 +1,94 @@
+# ============================================================================
+# RAF CHATBOT — CLIENT CONFIGURATION EXAMPLE
+# ============================================================================
+#
+# This file defines GLOBAL settings for the entire chatbot system.
+# One client = one instance of the chatbot infrastructure.
+#
+# DO NOT modify this .example file. Instead:
+# 1. Copy this file to client.yaml
+# 2. Adjust values for your deployment
+#
+# ============================================================================
+
+# APPLICATION SETTINGS
+app:
+  host: "0.0.0.0"                    # Listen on all interfaces
+  port: 8000                          # FastAPI server port
+  log_level: "INFO"                   # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  environment: "development"          # development, staging, production
+  name: "RAF Chatbot Institucional"  # Display name
+
+# QDRANT VECTOR DATABASE
+qdrant:
+  url: "http://qdrant:6333"          # Connection URL (Docker internal network)
+  api_key: null                       # Optional API key (null = no auth)
+  timeout_s: 30                       # Connection timeout in seconds
+  max_retries: 3                      # Retry attempts on failure
+
+# REDIS CACHE & QUEUE
+redis:
+  url: "redis://redis:6379/0"        # Connection URL
+  password: null                      # Optional password (null = no auth)
+  db: 0                               # Database index
+  timeout_s: 10                       # Connection timeout
+  max_pool_size: 20                   # Connection pool size
+
+# LLM CONFIGURATION (OpenRouter)
+llm:
+  provider: "openrouter"              # Provider name (openrouter, etc)
+  api_key_env_var: "OPENROUTER_API_KEY"  # Environment variable name
+  default_model: "meta-llama/llama-2-70b-chat"  # Default LLM model
+  fallback_model: "gpt-3.5-turbo"    # Fallback if default fails
+  timeout_s: 60                       # API request timeout
+  max_retries: 2                      # Retry attempts
+  max_tokens_default: 1024            # Default max tokens in response
+
+# FILESYSTEM PATHS
+paths:
+  sources_root: "/app/data/sources"   # Root directory for RAG sources
+  rags_config_dir: "/app/configs/rags" # Directory with RAG configs
+  logs_dir: "/app/logs"               # Application logs
+  templates_dir: "/app/configs/templates"  # Prompt templates directory
+
+# CONCURRENCY & RATE LIMITING (Global)
+concurrency:
+  global_max_inflight_requests: 100   # Max concurrent requests across all RAGs
+  global_rate_limit: 1000             # Global requests per second
+  request_timeout_s: 120              # Max duration for one request
+
+# SECURITY
+security:
+  behind_nginx: true                  # Is this behind Nginx reverse proxy?
+  trusted_proxies:                    # IPs to trust for X-Forwarded-* headers
+    - "127.0.0.1"
+    - "nginx"                         # Docker service name
+  cors_origins:                       # Allowed origins for CORS
+    - "http://localhost:3000"
+    - "http://localhost:8080"
+  require_api_key: false              # Require API key for requests
+  api_key_header: "X-API-Key"         # Header name for API key
+
+# CACHE SETTINGS
+cache:
+  enabled: true                       # Enable response caching
+  ttl_seconds: 3600                   # Cache TTL (1 hour)
+  backend: "redis"                    # redis or memory
+
+# SESSION MANAGEMENT
+sessions:
+  enabled: true                       # Enable session tracking
+  ttl_seconds: 86400                  # Session TTL (24 hours)
+  max_history_turns: 10               # Max conversation history
+
+# MONITORING & OBSERVABILITY
+monitoring:
+  enable_metrics: true                # Prometheus metrics endpoint
+  enable_tracing: false               # Enable distributed tracing
+  trace_sample_rate: 0.1              # Sampling rate (10%)
+
+# ERROR HANDLING
+error_handling:
+  return_stack_traces: false          # Include stack traces in responses
+  log_full_errors: true               # Log full errors server-side
+  default_error_message: "An error occurred. Please try again."

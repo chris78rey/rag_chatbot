@@ -1,0 +1,47 @@
+{
+  "version": "1.0",
+  "timestamp": "2024-01-01T00:00:00Z",
+  "services": {
+    "api": {
+      "status": "healthy",
+      "endpoints": {
+        "/health": "ok",
+        "/query": "ok",
+        "/metrics": "ok"
+      }
+    },
+    "qdrant": {
+      "status": "healthy",
+      "collections": {
+        "documents": {
+          "exists": true,
+          "vector_size": 384
+        }
+      }
+    }
+  },
+  "observability": {
+    "metrics_endpoint": "/metrics",
+    "required_metrics": [
+      "requests_total",
+      "errors_total",
+      "avg_latency_ms",
+      "p95_latency_ms"
+    ]
+  },
+  "integrations": {
+    "llm": {
+      "provider": "openrouter",
+      "fallback_enabled": true
+    },
+    "vector_db": {
+      "provider": "qdrant",
+      "connected": true
+    }
+  },
+  "constraints": {
+    "max_latency_p95_ms": 5000,
+    "min_availability_percent": 95,
+    "error_rate_threshold_percent": 5
+  }
+}
