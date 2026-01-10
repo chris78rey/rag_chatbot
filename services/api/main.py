@@ -3,6 +3,8 @@ from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 import logging
 from pathlib import Path
+import asyncio
+import subprocess
 
 from app.routes import main_router
 
@@ -12,6 +14,27 @@ logger = logging.getLogger(__name__)
 
 # Incluir router principal con todos los endpoints
 app.include_router(main_router)
+
+# --- SEED AUTOMÁTICO DE DATOS EN STARTUP ---
+@app.on_event("startup")
+async def startup_event():
+    logger.info("Running startup event for auto-ingestion seed...")
+    seed_script_path = "/workspace/scripts/seed_demo_data.py"
+    if Path(seed_script_path).exists():
+        logger.info(f"Executing seed script: {seed_script_path}")
+        # Ejecutar el seed en un hilo aparte para no bloquear el arranque
+        asyncio.create_task(
+            asyncio.to_thread(
+                subprocess.run,
+                ["python", seed_script_path],
+                capture_output=True,
+                text=True,
+                check=False
+            )
+        )
+    else:
+        logger.warning(f"Seed script not found at {seed_script_path}. Skipping auto-ingestion.")
+# --- FIN SEED AUTOMÁTICO ---
 
 
 @app.get("/health")

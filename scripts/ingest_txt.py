@@ -128,6 +128,55 @@ def chunk_by_lines(text: str, lines_per_chunk: int = 3) -> List[str]:
     
     return chunks
 
+def chunk_by_qa_blocks(text: str) -> List[str]:
+    """
+    Agrupa variantes de preguntas con la misma respuesta en un solo chunk.
+    Detecta bloques consecutivos de líneas que empiezan con 'pregunta:' y termina en la línea que contiene 'la respuesta de la pregunta anterior es:'.
+    Todas las preguntas y la respuesta se agrupan en un solo chunk.
+    """
+    import re
+    lines = [line.rstrip() for line in text.split('\n')]
+    chunks = []
+    current_questions = []
+    current_answer = []
+    in_answer = False
+
+    def is_pregunta_line(line: str) -> bool:
+        return bool(re.match(r'^\s*["\']?\s*pregunta:', line.strip(), re.IGNORECASE))
+
+    def is_respuesta_line(line: str) -> bool:
+        return "la respuesta de la pregunta anterior es:" in line.lower()
+
+    for line in lines:
+        if is_pregunta_line(line):
+            if current_questions and current_answer:
+                # Guardar chunk anterior
+                chunk = "\n".join(current_questions + current_answer)
+                if chunk.strip():
+                    chunks.append(chunk)
+                current_questions = []
+                current_answer = []
+                in_answer = False
+            current_questions.append(line)
+        elif is_respuesta_line(line):
+            current_answer = [line]
+            in_answer = True
+        else:
+            if in_answer:
+                current_answer.append(line)
+            elif current_questions:
+                current_questions.append(line)
+    # Añadir el último bloque si quedó abierto
+    if current_questions and current_answer:
+        chunk = "\n".join(current_questions + current_answer)
+        if chunk.strip():
+            chunks.append(chunk)
+    return chunks
+
+def chunk_by_full_lines(text: str) -> List[str]:
+    """Cada línea no vacía es un chunk completo (ideal para Q&A en una sola línea)."""
+    return [line.strip() for line in text.split('\n') if line.strip()]
+
 
 def ensure_collection(client, collection_name: str, vector_dim: int = EMBEDDING_DIM):
     """Crea colección en Qdrant si no existe."""
@@ -176,7 +225,9 @@ def ingest_txt(
     chunk_size: int = 500,
     chunk_overlap: int = 50,
     by_lines: bool = False,
-    lines_per_chunk: int = 3
+    lines_per_chunk: int = 3,
+    by_qa_blocks: bool = False,
+    by_line_chunks: bool = False
 ) -> int:
     """
     Ingesta un archivo TXT con embeddings reales de sentence-transformers.
@@ -204,7 +255,7 @@ def ingest_txt(
     print(f"RAG ID: {rag_id}")
     print(f"Qdrant: {qdrant_url}")
     print(f"Modelo: {EMBEDDING_MODEL} (dim={EMBEDDING_DIM})")
-    print(f"Modo: {'por líneas' if by_lines else 'por caracteres'}")
+    print(f"Modo: {'por QA blocks' if by_qa_blocks else ('por líneas' if by_lines else 'por caracteres')}")
     print(f"{'='*60}\n")
     
     # Verificar archivo
@@ -229,7 +280,9 @@ def ingest_txt(
     print("2. Dividiendo en chunks...")
     filename = os.path.basename(txt_path)
     
-    if by_lines:
+    if by_qa_blocks:
+        text_chunks = chunk_by_qa_blocks(text)
+    elif by_lines:
         text_chunks = chunk_by_lines(text, lines_per_chunk)
     else:
         text_chunks = chunk_text(text, chunk_size, chunk_overlap)
@@ -337,6 +390,8 @@ No requiere API key - 100% local y gratis.
     parser.add_argument("--chunk-overlap", "-o", type=int, default=50, help="Overlap")
     parser.add_argument("--by-lines", "-l", action="store_true", help="Dividir por líneas")
     parser.add_argument("--lines-per-chunk", type=int, default=3, help="Líneas por chunk")
+    parser.add_argument("--by-qa-blocks", action="store_true", help="Dividir por bloques pregunta+respuesta (Q&A)")
+    parser.add_argument("--by-line-chunks", action="store_true", help="Cada línea no vacía es un chunk completo (ideal para Q&A en una sola línea)")
     
     args = parser.parse_args()
     
@@ -349,6 +404,8 @@ No requiere API key - 100% local y gratis.
         "chunk_overlap": args.chunk_overlap,
         "by_lines": args.by_lines,
         "lines_per_chunk": args.lines_per_chunk,
+        "by_qa_blocks": args.by_qa_blocks,
+        "by_line_chunks": args.by_line_chunks,
     }
     
     if path.is_dir():
