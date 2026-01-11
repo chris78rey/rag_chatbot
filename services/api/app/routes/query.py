@@ -39,20 +39,20 @@ class SimpleQueryResponse(BaseModel):
 async def query_rag(request: QueryRequest):
     """
     Procesa una consulta RAG completa con parámetros estándar.
-    
+
     Args:
         request: QueryRequest con rag_id, question, top_k, session_id
-    
+
     Returns:
         QueryResponse con answer generado, context_chunks, latency_ms, etc.
     """
     metrics = get_metrics()
     metrics.inc_requests()
-    
+
     with Timer() as timer:
         # Generar session_id si no se provee
         session_id = request.session_id or str(uuid.uuid4())
-        
+
         try:
             # 1. Retrieval de contexto desde Qdrant
             top_k = request.top_k or 5
@@ -62,7 +62,7 @@ async def query_rag(request: QueryRequest):
                 top_k=top_k,
                 score_threshold=request.score_threshold
             )
-            
+
             # Convertir a modelo de respuesta
             context_chunks = [
                 ContextChunk(
@@ -73,7 +73,7 @@ async def query_rag(request: QueryRequest):
                 )
                 for chunk in chunks
             ]
-            
+
             # Si no hay contexto, retornar mensaje genérico
             if not context_chunks:
                 answer = "No se encontró contexto relevante para tu pregunta."
@@ -86,7 +86,7 @@ async def query_rag(request: QueryRequest):
                     cache_hit=False,
                     session_id=session_id
                 )
-            
+
             # 2. Cargar templates de prompts (templates por defecto)
             try:
                 system_template = load_template("prompts/system_default.txt")
@@ -97,7 +97,7 @@ async def query_rag(request: QueryRequest):
                     status_code=500,
                     detail=f"Template no encontrado: {str(e)}"
                 )
-            
+
             # 3. Build de mensajes para LLM
             messages = build_messages(
                 system_template=system_template,
@@ -113,12 +113,16 @@ async def query_rag(request: QueryRequest):
                 ],
                 session_history=None  # Sin historial por ahora
             )
-            
+
             # 4. Llamada a LLM con fallback
             try:
                 llm_response = await call_with_fallback(
-                    primary_model="openai/gpt-3.5-turbo",
-                    fallback_model="anthropic/claude-instant-v1",
+
+                    #primary_model="openai/gpt-3.5-turbo",
+                    #fallback_model="anthropic/claude-instant-v1",
+                    primary_model="mistralai/mistral-7b-instruct",
+                    fallback_model="meta-llama/llama-2-7b-chat",
+
                     messages=messages,
                     max_tokens=1024,
                     temperature=0.7,
@@ -130,9 +134,9 @@ async def query_rag(request: QueryRequest):
                 metrics.inc_errors()
                 # Si LLM falla, retornar mensaje de error
                 answer = f"Error al generar respuesta: {e.message}"
-            
+
             latency_ms = int(timer.elapsed_ms) if hasattr(timer, 'elapsed_ms') else 0
-            
+
             return QueryResponse(
                 rag_id=request.rag_id,
                 answer=answer,
@@ -141,7 +145,7 @@ async def query_rag(request: QueryRequest):
                 cache_hit=False,
                 session_id=session_id
             )
-            
+
         except HTTPException:
             raise
         except Exception as e:
@@ -157,20 +161,20 @@ async def query_simple(request: SimpleQueryRequest):
     """
     Endpoint simplificado para interfaz web.
     Acepta un parámetro 'query' y retorna respuesta formateada para web.
-    
+
     Con cache Redis: si la misma pregunta ya fue respondida,
     devuelve la respuesta cacheada en ~5ms en lugar de ~5 segundos.
-    
+
     Args:
         request: SimpleQueryRequest con query, rag_id, top_k, score_threshold
-    
+
     Returns:
         SimpleQueryResponse con answer, sources, context_chunks
     """
     metrics = get_metrics()
     metrics.inc_requests()
     cache = get_query_cache()
-    
+
     with Timer() as timer:
         try:
             # 1. BUSCAR EN CACHE PRIMERO
@@ -187,10 +191,10 @@ async def query_simple(request: SimpleQueryRequest):
                     ],
                     latency_ms=latency_ms
                 )
-            
+
             # 2. CACHE MISS - procesar normalmente
             session_id = str(uuid.uuid4())
-            
+
             # Retrieval de contexto desde Qdrant
             top_k = request.top_k or 5
             chunks = await retrieve_context(
@@ -199,7 +203,7 @@ async def query_simple(request: SimpleQueryRequest):
                 top_k=top_k,
                 score_threshold=request.score_threshold or 0.0
             )
-            
+
             # Convertir a modelo de respuesta
             context_chunks = [
                 ContextChunk(
@@ -210,10 +214,10 @@ async def query_simple(request: SimpleQueryRequest):
                 )
                 for chunk in chunks
             ]
-            
+
             # Extraer sources
             sources = list(set([c.source for c in context_chunks]))
-            
+
             # Si no hay contexto, retornar mensaje genérico
             if not context_chunks:
                 latency_ms = int(timer.elapsed_ms) if hasattr(timer, 'elapsed_ms') else 0
@@ -223,7 +227,7 @@ async def query_simple(request: SimpleQueryRequest):
                     context_chunks=[],
                     latency_ms=latency_ms
                 )
-            
+
             # Cargar templates de prompts
             try:
                 system_template = load_template("prompts/system_default.txt")
@@ -238,7 +242,7 @@ async def query_simple(request: SimpleQueryRequest):
                     context_chunks=context_chunks,
                     latency_ms=latency_ms
                 )
-            
+
             # Build de mensajes para LLM
             messages = build_messages(
                 system_template=system_template,
@@ -254,7 +258,7 @@ async def query_simple(request: SimpleQueryRequest):
                 ],
                 session_history=None
             )
-            
+
             # Llamada a LLM con fallback
             try:
                 llm_response = await call_with_fallback(
@@ -273,9 +277,9 @@ async def query_simple(request: SimpleQueryRequest):
             except Exception as e:
                 metrics.inc_errors()
                 answer = f"Error: {str(e)}"
-            
+
             latency_ms = int(timer.elapsed_ms) if hasattr(timer, 'elapsed_ms') else 0
-            
+
             # 3. GUARDAR EN CACHE para próximas consultas iguales
             response_to_cache = {
                 "answer": answer,
@@ -286,14 +290,14 @@ async def query_simple(request: SimpleQueryRequest):
                 ]
             }
             await cache.set(query=request.query, rag_id=request.rag_id, response=response_to_cache)
-            
+
             return SimpleQueryResponse(
                 answer=answer,
                 sources=sources,
                 context_chunks=context_chunks,
                 latency_ms=latency_ms
             )
-            
+
         except Exception as e:
             metrics.inc_errors()
             latency_ms = int(timer.elapsed_ms) if hasattr(timer, 'elapsed_ms') else 0
